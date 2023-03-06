@@ -24,7 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Center(
-          child: Text('약은 먹고 다니냐?'),
+          child: Text(
+            '약은 먹고 다니냐?',
+            style: TextStyle(fontWeight: FontWeight.w400),
+          ),
         ),
       ),
       body: Column(
@@ -179,8 +182,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(
                     height: 25,
                   ),
-                  const Text(
-                    '알람 설정 기능 구현',
+                  const Center(
+                    child: Text(
+                      '알람 설정 기능 구현 예정...',
+                    ),
                   ),
                 ],
               ),
@@ -196,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // 다시 추가할 때 Default 값으로 보이게 됨.
                   // ---------------------------------------
                   // [내용 수정]
-                  //takeOn 변수들은 method 내에서 생성한 변수들이므로,
+                  // takeOn 변수들은 method 내에서 생성한 변수들이므로,
                   // 초기화하지 않아도 된다.
                   // ---------------------------------------
                   // takeOnMorning = false;
