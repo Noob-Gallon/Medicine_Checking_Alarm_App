@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const Center(
                     child: Text(
-                      '알람 설정 기능 구현 예정...',
+                      '알람 설정 기능 구현 예정입니다.',
                     ),
                   ),
                 ],
