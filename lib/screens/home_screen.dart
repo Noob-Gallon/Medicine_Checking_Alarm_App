@@ -20,6 +20,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -36,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 50,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 30),
+            padding: const EdgeInsets.only(right: 30),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -64,8 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               SizedBox(
-                height: 650,
-                width: 400,
+                height: 500,
+                width: screenWidth * 1,
                 child: makeMedicineList(),
               ),
             ],
@@ -94,8 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
           return AlertDialog(
-            title: const Text(
-              '추가할 약의 정보를 입력해주세요.',
+            title: const Center(
+              child: Text(
+                '약 추가하기',
+              ),
             ),
             content: SizedBox(
               height: 300,
@@ -124,12 +129,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 25,
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
                           const Text(
                             '아침',
+                            style: TextStyle(
+                              fontSize: 15,
+                            ),
                           ),
                           Checkbox(
                             activeColor: Colors.blue,
@@ -147,6 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           const Text(
                             '점심',
+                            style: TextStyle(
+                              fontSize: 15,
+                            ),
                           ),
                           Checkbox(
                             activeColor: Colors.blue,
@@ -164,6 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           const Text(
                             '저녁',
+                            style: TextStyle(
+                              fontSize: 15,
+                            ),
                           ),
                           Checkbox(
                             activeColor: Colors.blue,
@@ -263,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.blue,
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              vertical: 10,
+              vertical: 5,
               horizontal: 0,
             ),
             child: ListTile(
