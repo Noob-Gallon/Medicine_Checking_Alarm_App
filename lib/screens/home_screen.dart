@@ -17,11 +17,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // 2023.03.06
   // MedicineWidget의 instance를 보관하는 List이다.
   List<MedicineModel> medicineList = [];
+  late String removedMedicineName;
+  late String addedMedicineName;
 
   @override
   void initState() {
     super.initState();
-
     fToast = FToast();
     fToast.init(context);
   }
@@ -60,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     fToast.showToast(
       child: toast,
       gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 2),
+      toastDuration: const Duration(seconds: 1),
     );
   }
 
@@ -69,21 +70,55 @@ class _HomeScreenState extends State<HomeScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
+    // -----------------------------------------
+    // 2023.03.08
+    // addPostFrameCallback은 Build가 끝난 이후에
+    // 지정된 콜백을 실행시켜 주지만, 이 방식은
+    // 스크린이 충분히 다 그려지기 전에 실행되므로
+    // 키보드가 내려가서 화면 상에서 인식되기 이전에
+    // 실행된다. 이 때문에 Future.delayed()를 이용하여
+    // 약간의 딜레이를 추가해 Toast가 원활하게 나오도록
+    // 만들었다.
+    // -----------------------------------------
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (prevMedicineNum == medicineList.length) return;
+
+          newMedicineNum = medicineList.length;
+          if (newMedicineNum == prevMedicineNum + 1) {
+            _showToast("약 알람이 추가되었습니다.");
+          } else if (newMedicineNum == prevMedicineNum - 1) {
+            // 2023.03.08
+            // 이름이 길 경우에 화면 바깥으로 Toast가 커지는 것에 대비해
+            // 처리가 필요하다. 현재는 임시적으로 comment out 처리한다.
+            // _showToast("$removedMedicineName의 알람이 제거되었습니다.");
+            _showToast("약 알람이 제거되었습니다.");
+          }
+
+          prevMedicineNum = newMedicineNum;
+        });
+      },
+    );
+
     // --------------------------------------------------------
     // 2023.03.07
     // SystemChannels.textInput.invokeMethod('TextInput.hide');
     // 키보드를 꺼내면 build method가 실행된다. 따라서,
-    // 이 위치에서 키보드를 내릴 수 없음.
+    // 이 위치에서 키보드를 내릴 수 없음. (Build 중에 또 Build 실행)
+    // 그리고, 여기서 _showToast를 하게 되면, build를 실행하는 중에
+    // 또 다시 build를 요청하게 되므로 불가능하다.
+    // build 이후에 콜백으로 진행되는 방식을 사용.
     // --------------------------------------------------------
-
     // newMedicineNum = medicineList.length;
     // if (newMedicineNum == prevMedicineNum + 1) {
     //   _showToast("약 알람이 추가되었습니다.");
     // } else if (newMedicineNum == prevMedicineNum - 1) {
     //   _showToast("약 알람이 제거되었습니다.");
     // }
-
     // prevMedicineNum = newMedicineNum;
+    // --------------------------------------------------------
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -97,11 +132,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          const SizedBox(
-            height: 50,
+          SizedBox(
+            height: screenHeight * 0.05,
           ),
           Padding(
-            padding: const EdgeInsets.only(right: 30),
+            padding: const EdgeInsets.fromLTRB(0, 0, 30, 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -110,28 +145,59 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: addNewMedicine,
                   icon: const Icon(
                     Icons.add_box_outlined,
+                    shadows: [
+                      Shadow(
+                        color: Colors.blueGrey,
+                        offset: Offset(1.5, 1.5),
+                        blurRadius: 3,
+                      ),
+                    ],
                     size: 50,
                     color: Colors.blue,
                   ),
                 ),
-                const IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: null,
-                  icon: Icon(
-                    Icons.settings,
-                    size: 50,
-                    color: Colors.blue,
-                  ),
-                )
+                // const IconButton(
+                //   padding: EdgeInsets.zero,
+                //   onPressed: null,
+                //   icon: Icon(
+                //     shadows: [
+                //       Shadow(
+                //         color: Colors.blueGrey,
+                //         offset: Offset(1.5, 1.5),
+                //         blurRadius: 3,
+                //       ),
+                //     ],
+                //     Icons.settings,
+                //     size: 50,
+                //     color: Colors.blue,
+                //   ),
+                // )
               ],
             ),
           ),
           Row(
             children: [
               SizedBox(
-                height: 500,
+                height: screenHeight * 0.7,
                 width: screenWidth * 1,
-                child: makeMedicineList(),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.grey,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black,
+                        offset: Offset(-0.1, -0.1),
+                        blurRadius: 2,
+                      ),
+                      BoxShadow(
+                        color: Colors.black,
+                        offset: Offset(0.1, 0.1),
+                        blurRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: makeMedicineList(),
+                ),
               ),
             ],
           ),
@@ -314,6 +380,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   FocusManager.instance.primaryFocus?.unfocus();
 
+                  // if (MediaQuery.of(context).viewInsets.bottom > 0) {
+                  //   FocusManager.instance.primaryFocus?.unfocus();
+                  //   return;
+                  // }
+
                   this.setState(() {
                     // -------------------------------------------------
                     // 2023.03.06
@@ -331,7 +402,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         takeOnNight: takeOnMorning,
                       ),
                     );
-                    _showToast('Test Toast');
                     Navigator.of(context).pop();
                   });
                 },
@@ -358,6 +428,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // medicineList를 순회하면서 MedicineWidget을 추가한다.
       itemBuilder: (context, index) {
         return Card(
+          shadowColor: Colors.blueGrey,
+          elevation: 3,
           color: Colors.blue,
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -365,6 +437,11 @@ class _HomeScreenState extends State<HomeScreen> {
               horizontal: 0,
             ),
             child: ListTile(
+              leading: const Icon(
+                Icons.medication_outlined,
+                size: 50,
+                color: Colors.white,
+              ),
               title: Text(
                 medicineList[index].name,
                 style: const TextStyle(
@@ -379,11 +456,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.grey.shade900,
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
-              ),
-              leading: const Icon(
-                Icons.medication_outlined,
-                size: 50,
-                color: Colors.white,
               ),
               trailing: SizedBox(
                 width: 70,
@@ -402,6 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: IconButton(
                         onPressed: () {
                           setState(() {
+                            removedMedicineName = medicineList[index].name;
                             medicineList.removeAt(index);
                           });
                         },

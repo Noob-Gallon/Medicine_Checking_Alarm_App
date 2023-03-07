@@ -11,9 +11,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      builder: FToastBuilder(),
-      home: const HomeScreen(),
+    return const MaterialApp(
+      home: HomeScreen(),
     );
   }
 }
