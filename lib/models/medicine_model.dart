@@ -1,12 +1,13 @@
+import 'package:flutter/material.dart';
+
 class MedicineModel {
-  final String name, description;
-  final bool takeOnMorning, takeOnAfternoon, takeOnNight;
+  String? name;
+  List<bool>? isTakeOn;
+  List<TimeOfDay?>? pickedTimes;
 
   MedicineModel({
     required this.name,
-    required this.description,
-    required this.takeOnMorning,
-    required this.takeOnAfternoon,
-    required this.takeOnNight,
+    required this.isTakeOn,
+    required this.pickedTimes,
   });
 }

@@ -7,8 +7,10 @@ environment:
   sdk: '>=3.0.0-285.0.dev <4.0.0'
 
 dependencies:
+  auto_size_text: ^3.0.0
   flutter:
     sdk: flutter
+  flutter_time_picker_spinner: ^2.0.0
   fluttertoast: ^8.2.1
     
 
