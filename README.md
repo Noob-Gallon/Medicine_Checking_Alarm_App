@@ -1,4 +1,4 @@
-# my_medicine_checking_app(developing on flutter)
+# my_medicine_checking_app
 
 This application provides the user to check their time to take medicine.  
 By creating an information about the medicine that user takes,  
