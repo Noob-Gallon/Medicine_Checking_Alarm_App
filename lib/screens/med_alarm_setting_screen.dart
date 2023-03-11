@@ -29,10 +29,20 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
 
   // 2023.03.09
   // 시간 출력에 12H, 24H 설정을 지원해야 함.
-  List<TimeOfDay?> pickedTimes = [
-    const TimeOfDay(hour: 9, minute: 0),
-    const TimeOfDay(hour: 14, minute: 0),
-    const TimeOfDay(hour: 20, minute: 0),
+  // [modified]
+  // 기존에는 TimeOfDay 형식으로 했지만,
+  // 이를 String 형식으로 수정함.
+  // Local DB 에서 데이터를 가져오는 과정에서
+  // 문제점이 있었기 때문에, String으로 통일함.
+  // List<TimeOfDay?> pickedTimes = [
+  //   const TimeOfDay(hour: 9, minute: 0),
+  //   const TimeOfDay(hour: 14, minute: 0),
+  //   const TimeOfDay(hour: 20, minute: 0),
+  // ];
+  List<String> pickedTimes = [
+    "09:00",
+    "14:00",
+    "20:00",
   ];
 
   Map<String, String>? resultData;
@@ -53,15 +63,36 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
     // if sectionDivdier is 1, this page is edit page.
     // initialize on alarm setting.
     if (widget.sectionDivider == 1) {
-      medicineName = widget.alarmInformation!.medicineName;
+      medicineName = widget.alarmInformation!.medicineName!;
 
       for (var i = 0; i <= 2; i++) {
-        if (widget.alarmInformation!.isTakeOn[i] == true) {
+        if (widget.alarmInformation!.isTakeOn![i] == true) {
           isTakeOn[i] = true;
-          pickedTimes[i] = widget.alarmInformation!.pickedTimes[i];
+          pickedTimes[i] = widget.alarmInformation!.pickedTimes![i];
         }
       }
     }
+  }
+
+  // 2023.03.10
+  // pickedTimes가 TimeOfDay에서 String을 보관하도록 바뀌었기 때문에
+  // 시간의 String을 TimeOfDay로 바꾸는데 사용하기 위한 메서드이다.
+  TimeOfDay convertStringToTime(String strTime) {
+    String hour = strTime.substring(0, 1);
+    String minute = strTime.substring(3, 4);
+
+    // 만약, 앞자리가 0이라면 0을 떼어낸다.
+    if (hour.startsWith('0')) {
+      hour = hour.substring(1);
+    }
+
+    // int.parse를 통해 String을 int로 바꾸고,
+    // TimeOfDay로 바꾸어 반환한다.
+    return TimeOfDay(hour: int.parse(hour), minute: int.parse(minute));
+  }
+
+  String convertTimetoString(TimeOfDay time) {
+    return time.toString().substring(10, 15);
   }
 
   Widget buildCheckBox(String name, int index) {
@@ -178,11 +209,13 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                         ? () async {
                             pickedTime = await showTimePicker(
                               context: context,
-                              initialTime: pickedTimes[index]!,
+                              initialTime:
+                                  convertStringToTime(pickedTimes[index]),
                             );
 
                             if (pickedTime != null) {
-                              pickedTimes[index] = pickedTime;
+                              pickedTimes[index] =
+                                  convertTimetoString(pickedTime!);
                               setState(() {});
                             }
                           }
@@ -339,17 +372,17 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                             if (widget.sectionDivider == 1) {
                               if (widget.alarmInformation!.medicineName ==
                                       medicineName &&
-                                  widget.alarmInformation!.isTakeOn[0] ==
+                                  widget.alarmInformation!.isTakeOn![0] ==
                                       isTakeOn[0] &&
-                                  widget.alarmInformation!.isTakeOn[1] ==
+                                  widget.alarmInformation!.isTakeOn![1] ==
                                       isTakeOn[1] &&
-                                  widget.alarmInformation!.isTakeOn[2] ==
+                                  widget.alarmInformation!.isTakeOn![2] ==
                                       isTakeOn[2] &&
-                                  widget.alarmInformation!.pickedTimes[0] ==
+                                  widget.alarmInformation!.pickedTimes![0] ==
                                       pickedTimes[0] &&
-                                  widget.alarmInformation!.pickedTimes[1] ==
+                                  widget.alarmInformation!.pickedTimes![1] ==
                                       pickedTimes[1] &&
-                                  widget.alarmInformation!.pickedTimes[2] ==
+                                  widget.alarmInformation!.pickedTimes![2] ==
                                       pickedTimes[2]) {
                                 util.showToast(8);
                                 return;

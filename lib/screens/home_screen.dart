@@ -1,8 +1,9 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:my_medicine_checking_app/models/alarm_information.dart';
-import 'package:my_medicine_checking_app/models/medicine_model.dart';
+// import 'package:my_medicine_checking_app/models/medicine_model.dart';
 import 'package:my_medicine_checking_app/screens/med_alarm_setting_screen.dart';
+import 'package:my_medicine_checking_app/servivces/user_database_helper.dart';
 import 'package:my_medicine_checking_app/utilities/utility.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,15 +20,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 2023.03.06
   // MedicineWidget의 instance를 보관하는 List이다.
-  List<MedicineModel> medicineList = [];
+  List<AlarmInformation> medicineList = [];
   late String? removedMedicineName;
   late String addedMedicineName;
   bool isCardChanged = false;
 
+  // 2023.03.10
+  // initState에서 DB에 저장된 AlarmInformation을 모두 가져온다.
+  // 이를 통해 초기 화면을 그리게 된다.
   @override
   void initState() {
     super.initState();
     util.injectContext(context);
+    getData();
+  }
+
+  getData() async {
+    UserDatabaseHelper.getAlarmInformation().then((alarmInformationList) {
+      for (elem in alarmInformationList) {
+        AlarmInformation data = AlarmInformation(medicineName: elem.medicineName, isTakeOn: isTakeOn, pickedTimes: pickedTimes)
+        medicineList.add(elem);
+      }
+    });
   }
 
   @override
@@ -130,9 +144,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
 
                     if (result != null) {
+                      // 추후에 코드 수정 필요.
+                      // AlarmInformation과 MedicineModel은
+                      // 하나로 합쳐질 수 있는가?
+
+                      AlarmInformation data = AlarmInformation(
+                          medicineName: result.medicineName,
+                          isTakeOn: result.isTakeOn,
+                          pickedTimes: result.pickedTimes);
+                      await UserDatabaseHelper.createAlarmInformation(data);
+
                       medicineList.add(
-                        MedicineModel(
-                          name: result.medicineName,
+                        AlarmInformation(
+                          medicineName: result.medicineName,
                           isTakeOn: result.isTakeOn,
                           pickedTimes: result.pickedTimes,
                         ),
@@ -455,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: AutoSizeText(
-                          medicineList[index].name!,
+                          medicineList[index].medicineName!,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 20,
@@ -488,7 +512,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   builder: (context) => MedAlarmSettingScreen(
                                     sectionDivider: 1,
                                     alarmInformation: AlarmInformation(
-                                      medicineName: medicineList[index].name!,
+                                      medicineName:
+                                          medicineList[index].medicineName!,
                                       isTakeOn: medicineList[index].isTakeOn!,
                                       pickedTimes:
                                           medicineList[index].pickedTimes!,
@@ -508,9 +533,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 return;
                               }
 
+                              // EditPage에서 내용이 수정되었다면
+                              // isCardChanged = true;
+                              // update!
+                              AlarmInformation data = AlarmInformation(
+                                medicineName: result.medicineName,
+                                isTakeOn: result.isTakeOn,
+                                pickedTimes: result.pickedTimes,
+                              );
+                              await UserDatabaseHelper.updateAlarmInformation(
+                                  data);
+
                               isCardChanged = true;
                               setState(() {
-                                medicineList[index].name = result.medicineName;
+                                medicineList[index].medicineName =
+                                    result.medicineName;
                                 medicineList[index].isTakeOn = result.isTakeOn;
                                 medicineList[index].pickedTimes =
                                     result.pickedTimes;
@@ -525,8 +562,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: IconButton(
                             onPressed: () {
-                              setState(() {
-                                removedMedicineName = medicineList[index].name;
+                              setState(() async {
+                                await UserDatabaseHelper.deleteAlarmInformation(
+                                    medicineList[index].medicineName!);
+
+                                removedMedicineName =
+                                    medicineList[index].medicineName;
                                 medicineList.removeAt(index);
                               });
                             },
