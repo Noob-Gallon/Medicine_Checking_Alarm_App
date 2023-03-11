@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 // connect to the database create tables, etc.
 class DatabaseHelper {
   static const _databaseName = "medAlarm.app";
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 1;
 
   DatabaseHelper._internal();
   static final DatabaseHelper databaseHelper = DatabaseHelper._internal();
@@ -24,10 +24,10 @@ class DatabaseHelper {
 
   Future<Database?> get database async {
     if (_database != null) {
-      print("1!!!");
+      print("returns the database");
       return _database;
     }
-    print("2!!!");
+    print("build a new database");
     _database = await _initDatabase();
     return _database;
   }

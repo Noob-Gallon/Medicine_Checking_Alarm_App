@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.0.0-285.0.dev <4.0.0'
 
 dependencies:
+  async: ^2.10.0
   auto_size_text: ^3.0.0
   flutter:
     sdk: flutter

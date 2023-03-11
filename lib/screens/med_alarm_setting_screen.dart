@@ -27,18 +27,23 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
   List<bool> isTakeOn = [false, false, false];
   String medicineName = '';
 
+  // ---------------------------------------
   // 2023.03.09
   // 시간 출력에 12H, 24H 설정을 지원해야 함.
+  // ---------------------------------------
   // [modified]
   // 기존에는 TimeOfDay 형식으로 했지만,
   // 이를 String 형식으로 수정함.
   // Local DB 에서 데이터를 가져오는 과정에서
   // 문제점이 있었기 때문에, String으로 통일함.
+  // ---------------------------------------
+
   // List<TimeOfDay?> pickedTimes = [
   //   const TimeOfDay(hour: 9, minute: 0),
   //   const TimeOfDay(hour: 14, minute: 0),
   //   const TimeOfDay(hour: 20, minute: 0),
   // ];
+
   List<String> pickedTimes = [
     "09:00",
     "14:00",
@@ -52,7 +57,7 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
   // ------------------------------------------------------------------------- //
 
   // 2023.03.09
-  // initialize util to use toastMessage at first.
+  // initialize util on initState to use toastMessage.
   @override
   void initState() {
     super.initState();
@@ -60,8 +65,10 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
     util.injectContext(context);
 
     // 2023.03.10
-    // if sectionDivdier is 1, this page is edit page.
-    // initialize on alarm setting.
+    // set the initial value of alarm informations
+    // using the AlarmInformation instance receiverd by Navigator.push()
+    // when widget.sectionDivider is 1.
+    // In this case, alarmInformation is not null.
     if (widget.sectionDivider == 1) {
       medicineName = widget.alarmInformation!.medicineName!;
 
@@ -78,12 +85,12 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
   // pickedTimes가 TimeOfDay에서 String을 보관하도록 바뀌었기 때문에
   // 시간의 String을 TimeOfDay로 바꾸는데 사용하기 위한 메서드이다.
   TimeOfDay convertStringToTime(String strTime) {
-    String hour = strTime.substring(0, 1);
-    String minute = strTime.substring(3, 4);
+    String hour = strTime.substring(0, 2);
+    String minute = strTime.substring(3, 5);
 
-    // 만약, 앞자리가 0이라면 0을 떼어낸다.
+    // 만약 앞자리가 0이라면 0을 떼어낸다.
     if (hour.startsWith('0')) {
-      hour = hour.substring(1);
+      hour = hour.substring(0);
     }
 
     // int.parse를 통해 String을 int로 바꾸고,
@@ -91,7 +98,9 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
     return TimeOfDay(hour: int.parse(hour), minute: int.parse(minute));
   }
 
-  String convertTimetoString(TimeOfDay time) {
+  // 2023.03.11
+  // 전달받은 TimeOfDay 객체를 "00:00" 형태의 String으로 변경한다.
+  String convertTimeToString(TimeOfDay time) {
     return time.toString().substring(10, 15);
   }
 
@@ -185,7 +194,7 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                 ),
                 isTakeOn[index]
                     ? Text(
-                        pickedTimes[index].toString().substring(10, 15),
+                        pickedTimes[index],
                         style: const TextStyle(
                           fontSize: 30,
                           color: Colors.white,
@@ -215,7 +224,7 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
 
                             if (pickedTime != null) {
                               pickedTimes[index] =
-                                  convertTimetoString(pickedTime!);
+                                  convertTimeToString(pickedTime!);
                               setState(() {});
                             }
                           }
@@ -348,8 +357,10 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                         ElevatedButton(
                           onPressed: () {
                             // 2023.03.09
-                            // 바뀐 상태를 출력해주고, 정말 이렇게 할건지 확인하는 dialog 설정.
+                            // 바뀐 상태를 출력해주고, 정말 이렇게 할건지 확인하는 dialog 설정 필요.
                             // 데이터 전달은 데이터 전달을 위한 data class를 세팅하고, 이를 전달.
+
+                            // 이름을 입력하지 않았다면 return.
                             if (medicineName == '') {
                               util.showToast(3);
                               return;
@@ -366,7 +377,7 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                             // }
 
                             // 2023.03.10
-                            // 수정된 내용이 있는지 없는지를 체크,
+                            // EditPage일 때 수정된 내용이 있는지 없는지를 체크,
                             // 만약 수정된 내용이 없다면 showToast를 띄우고
                             // 수정할 내용이 필요하다고 안내한다.
                             if (widget.sectionDivider == 1) {

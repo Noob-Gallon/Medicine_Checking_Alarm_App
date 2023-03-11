@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:my_medicine_checking_app/models/alarm_information.dart';
@@ -14,38 +16,41 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future cardsFuture;
   Utility util = Utility();
   var prevMedicineNum = 0;
   var newMedicineNum = 0;
 
   // 2023.03.06
-  // MedicineWidget의 instance를 보관하는 List이다.
+  // 화면에 그려질 AlarmInformation을 보관하고 있는 List이다.
   List<AlarmInformation> medicineList = [];
   late String? removedMedicineName;
   late String addedMedicineName;
   bool isCardChanged = false;
+  bool firstInit = true;
+  bool toastFirstFlag = true;
 
   // 2023.03.10
   // initState에서 DB에 저장된 AlarmInformation을 모두 가져온다.
   // 이를 통해 초기 화면을 그리게 된다.
   @override
   void initState() {
-    super.initState();
+    cardsFuture = _getCardsFuture();
     util.injectContext(context);
-    getData();
+    super.initState();
   }
 
-  getData() async {
-    UserDatabaseHelper.getAlarmInformation().then((alarmInformationList) {
-      for (elem in alarmInformationList) {
-        AlarmInformation data = AlarmInformation(medicineName: elem.medicineName, isTakeOn: isTakeOn, pickedTimes: pickedTimes)
-        medicineList.add(elem);
-      }
-    });
+  Future<List<AlarmInformation>> _getCardsFuture() async {
+    List<AlarmInformation> dataFromDB =
+        await UserDatabaseHelper.getAlarmInformation();
+    print('return!');
+    return dataFromDB;
   }
 
   @override
   Widget build(BuildContext context) {
+    print("check build");
+
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     // -----------------------------------------
@@ -67,23 +72,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback(
       (_) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          newMedicineNum = medicineList.length;
-          if (newMedicineNum == prevMedicineNum + 1) {
-            util.showToast(0);
-            prevMedicineNum = newMedicineNum;
-          } else if (newMedicineNum == prevMedicineNum - 1) {
-            // 2023.03.08
-            // 이름이 길 경우에 화면 바깥으로 Toast가 커지는 것에 대비해
-            // 처리가 필요하다. 현재는 임시적으로 comment out 처리한다.
-            // _showToast("$removedMedicineName의 알람이 제거되었습니다.");
-            util.showToast(1);
-            prevMedicineNum = newMedicineNum;
-          } else if (isCardChanged == true) {
-            util.showToast(2);
-            isCardChanged = false;
-          }
-        });
+        print("current medicineNum : ${medicineList.length}");
+        // FutureBuilder가 끝나길 기다렸다가,
+        // Callback으로 동작하게 된다.
+        Future.delayed(
+          const Duration(milliseconds: 1000),
+          () {
+            print('medicineNum : ${medicineList.length}');
+
+            newMedicineNum = medicineList.length;
+            if (toastFirstFlag == true) {
+              print('first time to use toast');
+              prevMedicineNum = newMedicineNum;
+              toastFirstFlag = false;
+              return;
+            }
+
+            if (newMedicineNum == prevMedicineNum + 1) {
+              print('callback 1');
+              util.showToast(0);
+              prevMedicineNum = newMedicineNum;
+            } else if (newMedicineNum == prevMedicineNum - 1) {
+              // 2023.03.08
+              // 이름이 길 경우에 화면 바깥으로 Toast가 커지는 것에 대비해
+              // 처리가 필요하다. 현재는 임시적으로 comment out 처리한다.
+              // _showToast("$removedMedicineName의 알람이 제거되었습니다.");
+              print('callback 2');
+
+              util.showToast(1);
+              prevMedicineNum = newMedicineNum;
+            } else if (isCardChanged == true) {
+              print('callback 3');
+
+              util.showToast(2);
+              isCardChanged = false;
+            }
+          },
+        );
       },
     );
 
@@ -105,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // prevMedicineNum = newMedicineNum;
     // --------------------------------------------------------
 
+    print('before return Scaffold!');
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -144,23 +170,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
 
                     if (result != null) {
-                      // 추후에 코드 수정 필요.
-                      // AlarmInformation과 MedicineModel은
-                      // 하나로 합쳐질 수 있는가?
+                      // 2023.03.11
+                      // result != null이면 생성된 alarm이 있다는 것이므로
+                      // 이를 DB에 저장하고, medicineList에도 추가한다.
+                      await UserDatabaseHelper.createAlarmInformation(result);
+                      medicineList.add(result);
 
-                      AlarmInformation data = AlarmInformation(
-                          medicineName: result.medicineName,
-                          isTakeOn: result.isTakeOn,
-                          pickedTimes: result.pickedTimes);
-                      await UserDatabaseHelper.createAlarmInformation(data);
-
-                      medicineList.add(
-                        AlarmInformation(
-                          medicineName: result.medicineName,
-                          isTakeOn: result.isTakeOn,
-                          pickedTimes: result.pickedTimes,
-                        ),
-                      );
                       setState(() {});
                     }
                   },
@@ -221,7 +236,37 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    child: makeMedicineList(),
+                    // 2023.03.11
+                    // firstInit으로 판단하도록 만들어서 처음 애플리케이션이 실행될 때만
+                    // FutureBuilder를 통해 medicineList를 초기화한다.
+                    // 그 이후 부터는 firstInit이 false가 되기 때문에
+                    // makeMedicineList()만 수행하게 된다.
+                    // 이전과 같은 문제가 왜 발생했었는지 조사가 필요하다.
+
+                    child: firstInit
+                        ? FutureBuilder(
+                            future: cardsFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const CircularProgressIndicator();
+                              } else {
+                                if (snapshot.hasError ||
+                                    snapshot.hasData == false) {
+                                  return const Text('Error loading data');
+                                } else {
+                                  for (var data in snapshot.data!) {
+                                    print('FutureBuilder for loop!');
+                                    medicineList.add(data);
+                                  }
+                                  firstInit = false;
+
+                                  return makeMedicineList();
+                                }
+                              }
+                            },
+                          )
+                        : makeMedicineList(),
                   ),
                 ),
               ),
@@ -536,13 +581,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               // EditPage에서 내용이 수정되었다면
                               // isCardChanged = true;
                               // update!
-                              AlarmInformation data = AlarmInformation(
-                                medicineName: result.medicineName,
-                                isTakeOn: result.isTakeOn,
-                                pickedTimes: result.pickedTimes,
-                              );
+
+                              // AlarmInformation data = AlarmInformation(
+                              //   medicineName: result.medicineName,
+                              //   isTakeOn: result.isTakeOn,
+                              //   pickedTimes: result.pickedTimes,
+                              // );
+
                               await UserDatabaseHelper.updateAlarmInformation(
-                                  data);
+                                  result);
 
                               isCardChanged = true;
                               setState(() {
@@ -562,14 +609,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: IconButton(
                             onPressed: () {
-                              setState(() async {
-                                await UserDatabaseHelper.deleteAlarmInformation(
-                                    medicineList[index].medicineName!);
+                              // 2023.03.11
+                              // setState 내에서는 async 실행이 불가능하므로
+                              // 외부에서 delete 진행.
+                              UserDatabaseHelper.deleteAlarmInformation(
+                                  medicineList[index].medicineName!);
 
-                                removedMedicineName =
-                                    medicineList[index].medicineName;
-                                medicineList.removeAt(index);
-                              });
+                              removedMedicineName =
+                                  medicineList[index].medicineName;
+                              medicineList.removeAt(index);
+                              setState(() {});
                             },
                             icon: const Icon(
                               Icons.delete,
@@ -613,10 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           medicineList[index].isTakeOn![0]
                               ? Text(
-                                  medicineList[index]
-                                      .pickedTimes![0]
-                                      .toString()
-                                      .substring(10, 15),
+                                  medicineList[index].pickedTimes![0],
                                   style: const TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
@@ -661,10 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           medicineList[index].isTakeOn![1]
                               ? Text(
-                                  medicineList[index]
-                                      .pickedTimes![1]
-                                      .toString()
-                                      .substring(10, 15),
+                                  medicineList[index].pickedTimes![1],
                                   style: const TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
@@ -709,10 +752,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           medicineList[index].isTakeOn![2]
                               ? Text(
-                                  medicineList[index]
-                                      .pickedTimes![2]
-                                      .toString()
-                                      .substring(10, 15),
+                                  medicineList[index].pickedTimes![2],
                                   style: const TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,

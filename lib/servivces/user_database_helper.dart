@@ -6,18 +6,12 @@ class UserDatabaseHelper {
   // database_helpder에서 AlarmInformation라고 만들었음.
   static String tableName = "AlarmInformation";
 
-  static Future<void> createAlarmInformation(
-      AlarmInformation alarmInformation) async {
-    var database = await DatabaseHelper.instance.database;
-    await database!.insert(tableName, alarmInformation.toMap());
-  }
-
-  static Future<List<Map<String, dynamic>>> getAlarmInformation() async {
+  static Future<List<AlarmInformation>> getAlarmInformation() async {
     var database = await DatabaseHelper.instance.database;
     List<Map<String, dynamic>> list =
         await database!.rawQuery("SELECT * FROM $tableName");
 
-    List<Map<String, dynamic>> alarmInformationList = [];
+    List<AlarmInformation> alarmInformationList = [];
 
     // AlarmInformation 형태로 바뀌도록 map해야 함!
     for (var element in list) {
@@ -26,6 +20,12 @@ class UserDatabaseHelper {
     }
 
     return alarmInformationList;
+  }
+
+  static Future<void> createAlarmInformation(
+      AlarmInformation alarmInformation) async {
+    var database = await DatabaseHelper.instance.database;
+    await database!.insert(tableName, alarmInformation.toMap());
   }
 
   static Future<void> updateAlarmInformation(
