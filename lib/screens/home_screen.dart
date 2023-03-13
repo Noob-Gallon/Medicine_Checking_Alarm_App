@@ -1,11 +1,12 @@
-import 'dart:async';
+// ignore_for_file: avoid_print
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:my_medicine_checking_app/controllers/alarm_controller.dart';
 import 'package:my_medicine_checking_app/models/alarm_information.dart';
 // import 'package:my_medicine_checking_app/models/medicine_model.dart';
 import 'package:my_medicine_checking_app/screens/med_alarm_setting_screen.dart';
-import 'package:my_medicine_checking_app/servivces/user_database_helper.dart';
 import 'package:my_medicine_checking_app/utilities/utility.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,13 +17,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future cardsFuture;
+  // 2023.03.14
+  // AlarmInformation model에 대하여 처리해줄 alarmController 생성.
+  // Dependency Injection(Get.put)을 통해 Controller를 사용할 수 있게 만든다.
+  final alarmController = Get.put(AlarmController());
+
+  // late Future cardsFuture;
+
+  // 2023.03.14
+  // 편의 기능을 담아둔 Utility 클래스 생성
+  // 현재는 toast 기능만을 사용한다.
   Utility util = Utility();
   var prevMedicineNum = 0;
   var newMedicineNum = 0;
 
   // 2023.03.06
   // 화면에 그려질 AlarmInformation을 보관하고 있는 List이다.
+  // controller 도입에 따라 제거될 예정.
   List<AlarmInformation> medicineList = [];
   late String? removedMedicineName;
   late String addedMedicineName;
@@ -35,21 +46,20 @@ class _HomeScreenState extends State<HomeScreen> {
   // 이를 통해 초기 화면을 그리게 된다.
   @override
   void initState() {
-    cardsFuture = _getCardsFuture();
+    // cardsFuture = _getCardsFuture();
     util.injectContext(context);
     super.initState();
   }
 
-  Future<List<AlarmInformation>> _getCardsFuture() async {
-    List<AlarmInformation> dataFromDB =
-        await UserDatabaseHelper.getAlarmInformation();
-    print('return!');
-    return dataFromDB;
-  }
+  // Future<List<AlarmInformation>> _getCardsFuture() async {
+  //   List<AlarmInformation> dataFromDB =
+  //       await UserDatabaseHelper.getAlarmInformation();
+  //   return dataFromDB;
+  // }
 
   @override
   Widget build(BuildContext context) {
-    print("check build");
+    print('HomeScreen building is started...');
 
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
@@ -70,47 +80,49 @@ class _HomeScreenState extends State<HomeScreen> {
     // 그렇기 때문에 0.5초의 delay를 주고 toast를 띄워준다.
     // -----------------------------------------
 
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) {
-        print("current medicineNum : ${medicineList.length}");
-        // FutureBuilder가 끝나길 기다렸다가,
-        // Callback으로 동작하게 된다.
-        Future.delayed(
-          const Duration(milliseconds: 1000),
-          () {
-            print('medicineNum : ${medicineList.length}');
+    // 2023.03.14
+    // GetX 동작 확인을 위해 일시적으로 comment out
+    // WidgetsBinding.instance.addPostFrameCallback(
+    //   (_) {
+    //     print("current medicineNum : ${medicineList.length}");
+    //     // FutureBuilder가 끝나길 기다렸다가,
+    //     // Callback으로 동작하게 된다.
+    //     Future.delayed(
+    //       const Duration(milliseconds: 1000),
+    //       () {
+    //         print('medicineNum : ${medicineList.length}');
 
-            newMedicineNum = medicineList.length;
-            if (toastFirstFlag == true) {
-              print('first time to use toast');
-              prevMedicineNum = newMedicineNum;
-              toastFirstFlag = false;
-              return;
-            }
+    //         newMedicineNum = medicineList.length;
+    //         if (toastFirstFlag == true) {
+    //           print('first time to use toast');
+    //           prevMedicineNum = newMedicineNum;
+    //           toastFirstFlag = false;
+    //           return;
+    //         }
 
-            if (newMedicineNum == prevMedicineNum + 1) {
-              print('callback 1');
-              util.showToast(0);
-              prevMedicineNum = newMedicineNum;
-            } else if (newMedicineNum == prevMedicineNum - 1) {
-              // 2023.03.08
-              // 이름이 길 경우에 화면 바깥으로 Toast가 커지는 것에 대비해
-              // 처리가 필요하다. 현재는 임시적으로 comment out 처리한다.
-              // _showToast("$removedMedicineName의 알람이 제거되었습니다.");
-              print('callback 2');
+    //         if (newMedicineNum == prevMedicineNum + 1) {
+    //           print('callback 1');
+    //           util.showToast(0);
+    //           prevMedicineNum = newMedicineNum;
+    //         } else if (newMedicineNum == prevMedicineNum - 1) {
+    //           // 2023.03.08
+    //           // 이름이 길 경우에 화면 바깥으로 Toast가 커지는 것에 대비해
+    //           // 처리가 필요하다. 현재는 임시적으로 comment out 처리한다.
+    //           // _showToast("$removedMedicineName의 알람이 제거되었습니다.");
+    //           print('callback 2');
 
-              util.showToast(1);
-              prevMedicineNum = newMedicineNum;
-            } else if (isCardChanged == true) {
-              print('callback 3');
+    //           util.showToast(1);
+    //           prevMedicineNum = newMedicineNum;
+    //         } else if (isCardChanged == true) {
+    //           print('callback 3');
 
-              util.showToast(2);
-              isCardChanged = false;
-            }
-          },
-        );
-      },
-    );
+    //           util.showToast(2);
+    //           isCardChanged = false;
+    //         }
+    //       },
+    //     );
+    //   },
+    // );
 
     // --------------------------------------------------------
     // 2023.03.07
@@ -130,7 +142,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // prevMedicineNum = newMedicineNum;
     // --------------------------------------------------------
 
-    print('before return Scaffold!');
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -169,14 +180,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
 
+                    // 2023.03.14
+                    // 전달된 데이터가 있을 때에만 addAlarm 실행.
+                    // controller에서 addAlarm을 실행하면 static method를 통해
+                    // DB에도 데이터가 자동으로 추가된다.
                     if (result != null) {
-                      // 2023.03.11
-                      // result != null이면 생성된 alarm이 있다는 것이므로
-                      // 이를 DB에 저장하고, medicineList에도 추가한다.
-                      await UserDatabaseHelper.createAlarmInformation(result);
-                      medicineList.add(result);
-
-                      setState(() {});
+                      alarmController.addAlarm(result);
                     }
                   },
                   icon: const Icon(
@@ -194,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const IconButton(
                   padding: EdgeInsets.zero,
-                  onPressed: null,
+                  onPressed: null, // TODO, implementing onPressed callback!
                   icon: Icon(
                     shadows: [
                       Shadow(
@@ -221,53 +230,379 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: screenHeight * 0.7,
                   width: screenWidth * 0.9,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color.fromARGB(248, 244, 247, 249),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black,
-                          offset: Offset(-0.1, -0.1),
-                          blurRadius: 0.5,
-                        ),
-                        BoxShadow(
-                          color: Colors.black,
-                          offset: Offset(0.1, 0.1),
-                          blurRadius: 0.5,
-                        ),
-                      ],
-                    ),
-                    // 2023.03.11
-                    // firstInit으로 판단하도록 만들어서 처음 애플리케이션이 실행될 때만
-                    // FutureBuilder를 통해 medicineList를 초기화한다.
-                    // 그 이후 부터는 firstInit이 false가 되기 때문에
-                    // makeMedicineList()만 수행하게 된다.
-                    // 이전과 같은 문제가 왜 발생했었는지 조사가 필요하다.
+                      decoration: const BoxDecoration(
+                        color: Color.fromARGB(248, 244, 247, 249),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(-0.1, -0.1),
+                            blurRadius: 0.5,
+                          ),
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(0.1, 0.1),
+                            blurRadius: 0.5,
+                          ),
+                        ],
+                      ),
+                      // -----------------------------------------------------------
+                      // 2023.03.11
+                      // firstInit으로 판단하도록 만들어서 처음 애플리케이션이 실행될 때만
+                      // FutureBuilder를 통해 medicineList를 초기화한다.
+                      // 그 이후부터는 firstInit이 false가 되기 때문에
+                      // makeMedicineList()만 수행하게 된다.
+                      // 이전과 같은 문제가 왜 발생했었는지 조사가 필요하다.
+                      // -----------------------------------------------------------
+                      // [modified]
+                      // GetX 사용으로 인해 firstInit 제거함.
+                      // -----------------------------------------------------------
 
-                    child: firstInit
-                        ? FutureBuilder(
-                            future: cardsFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const CircularProgressIndicator();
-                              } else {
-                                if (snapshot.hasError ||
-                                    snapshot.hasData == false) {
-                                  return const Text('Error loading data');
-                                } else {
-                                  for (var data in snapshot.data!) {
-                                    print('FutureBuilder for loop!');
-                                    medicineList.add(data);
-                                  }
-                                  firstInit = false;
+                      child: GetX<AlarmController>(builder: (controller) {
+                        return Scrollbar(
+                          child: ListView.separated(
+                            scrollDirection: Axis.vertical,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 20,
+                            ),
+                            itemCount: controller.length,
+                            // medicineList를 순회하면서 MedicineWidget을 추가한다.
+                            itemBuilder: (context, index) {
+                              return Card(
+                                shadowColor: Colors.blueGrey,
+                                elevation: 3,
+                                color: Colors.blue,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 5,
+                                    horizontal: 0,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.medication_outlined,
+                                          size: 50,
+                                          color: Colors.white,
+                                        ),
+                                        title: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Expanded(
+                                              child: AutoSizeText(
+                                                controller.medicineAlarms[index]
+                                                    .medicineName!,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color.fromARGB(
+                                                      255, 49, 49, 49),
+                                                ),
+                                                maxLines: 2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // subtitle: Text(
+                                        //   medicineList[index].description,
+                                        // ),
+                                        trailing: SizedBox(
+                                          width: 70,
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: IconButton(
+                                                  // 2023.03.10
+                                                  // MedicineCreationScreen으로 넘어갈 때 데이터를 넘겨서
+                                                  // Edit인지 Create인지 구분할 수 있어야 하고,
+                                                  // 추가로 데이터를 전달해주어야 함.
+                                                  onPressed: () async {
+                                                    Map<String, dynamic>
+                                                        result =
+                                                        await Navigator.push(
+                                                      context,
+                                                      // Edit Page로 이동.
+                                                      // 2023.03.14 이 부분은 어떻게 처리?
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            MedAlarmSettingScreen(
+                                                          sectionDivider: 1,
+                                                          alarmInformation:
+                                                              AlarmInformation(
+                                                            medicineName: controller
+                                                                .medicineAlarms[
+                                                                    index]
+                                                                .medicineName!,
+                                                            isTakeOn: controller
+                                                                .medicineAlarms[
+                                                                    index]
+                                                                .isTakeOn!,
+                                                            pickedTimes: controller
+                                                                .medicineAlarms[
+                                                                    index]
+                                                                .pickedTimes!,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
 
-                                  return makeMedicineList();
-                                }
-                              }
+                                                    // --------------------------------------------------
+                                                    // Edit 페이지에서 수정된 데이터가 전달되었으므로,
+                                                    // 알람 카드의 내용을 수정한다.
+                                                    // build의 callback에서 카드 변경을 체크하고
+                                                    // 토스트 메시지를 띄우기 위해 set isCardChanged flag.
+                                                    // --------------------------------------------------
+
+                                                    alarmController.updateAlarm(
+                                                      index,
+                                                      result['edittedAlarm'],
+                                                      result['nameBeforeEdit'],
+                                                    );
+
+                                                    // EditPage에서 내용이 수정되었다면
+                                                    // isCardChanged = true;
+                                                    // update!
+
+                                                    // AlarmInformation data = AlarmInformation(
+                                                    //   medicineName: result.medicineName,
+                                                    //   isTakeOn: result.isTakeOn,
+                                                    //   pickedTimes: result.pickedTimes,
+                                                    // );
+
+                                                    // 2023.03.14
+                                                    // 해당 부분은 GetX를 이용해 처리하게 될 것이므로
+                                                    // 불필요한 setState()는 comment out 한다.
+                                                    // setState(() {
+                                                    //   medicineList[index]
+                                                    //           .medicineName =
+                                                    //       result
+                                                    //           .medicineName;
+                                                    //   medicineList[index]
+                                                    //           .isTakeOn =
+                                                    //       result.isTakeOn;
+                                                    //   medicineList[index]
+                                                    //           .pickedTimes =
+                                                    //       result
+                                                    //           .pickedTimes;
+                                                    // });
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.edit,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: IconButton(
+                                                  onPressed: () {
+                                                    // 2023.03.14
+                                                    // controller에서 index의 alarm을 delete 한다.
+                                                    alarmController
+                                                        .delAlarm(index);
+
+                                                    // 2023.03.14
+                                                    // controller.delAlarm에서 del이 처리되므로,
+                                                    // 아래 부분은 comment out 한다.
+                                                    // removedMedicineName =
+                                                    //     medicineList[index]
+                                                    //         .medicineName;
+                                                    // medicineList
+                                                    //     .removeAt(index);
+
+                                                    // setState(() {});
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.delete,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                              horizontal: 10,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Text(
+                                                      '아침',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 15,
+                                                      ),
+                                                    ),
+                                                    controller
+                                                            .medicineAlarms[
+                                                                index]
+                                                            .isTakeOn![0]
+                                                        ? const Icon(
+                                                            Icons
+                                                                .check_box_outlined,
+                                                            color: Colors.white,
+                                                          )
+                                                        : const Icon(
+                                                            Icons
+                                                                .check_box_outline_blank_outlined,
+                                                            color: Colors.white,
+                                                          ),
+                                                  ],
+                                                ),
+                                                controller.medicineAlarms[index]
+                                                        .isTakeOn![0]
+                                                    ? Text(
+                                                        controller
+                                                            .medicineAlarms[
+                                                                index]
+                                                            .pickedTimes![0],
+                                                        style: const TextStyle(
+                                                          fontSize: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      )
+                                                    : const Text(
+                                                        'OFF',
+                                                        style: TextStyle(
+                                                          fontSize: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                              ],
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                              horizontal: 10,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Text(
+                                                      '점심',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 15,
+                                                      ),
+                                                    ),
+                                                    controller
+                                                            .medicineAlarms[
+                                                                index]
+                                                            .isTakeOn![1]
+                                                        ? const Icon(
+                                                            Icons
+                                                                .check_box_outlined,
+                                                            color: Colors.white,
+                                                          )
+                                                        : const Icon(
+                                                            Icons
+                                                                .check_box_outline_blank_outlined,
+                                                            color: Colors.white,
+                                                          ),
+                                                  ],
+                                                ),
+                                                controller.medicineAlarms[index]
+                                                        .isTakeOn![1]
+                                                    ? Text(
+                                                        controller
+                                                            .medicineAlarms[
+                                                                index]
+                                                            .pickedTimes![1],
+                                                        style: const TextStyle(
+                                                          fontSize: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      )
+                                                    : const Text(
+                                                        'OFF',
+                                                        style: TextStyle(
+                                                          fontSize: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                              ],
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                              horizontal: 10,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Text(
+                                                      '저녁',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 15,
+                                                      ),
+                                                    ),
+                                                    controller
+                                                            .medicineAlarms[
+                                                                index]
+                                                            .isTakeOn![2]
+                                                        ? const Icon(
+                                                            Icons
+                                                                .check_box_outlined,
+                                                            color: Colors.white,
+                                                          )
+                                                        : const Icon(
+                                                            Icons
+                                                                .check_box_outline_blank_outlined,
+                                                            color: Colors.white,
+                                                          ),
+                                                  ],
+                                                ),
+                                                controller.medicineAlarms[index]
+                                                        .isTakeOn![2]
+                                                    ? Text(
+                                                        controller
+                                                            .medicineAlarms[
+                                                                index]
+                                                            .pickedTimes![2],
+                                                        style: const TextStyle(
+                                                          fontSize: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      )
+                                                    : const Text(
+                                                        'OFF',
+                                                        style: TextStyle(
+                                                          fontSize: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
-                          )
-                        : makeMedicineList(),
-                  ),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(
+                              height: 10,
+                            ),
+                          ),
+                        );
+                      })),
                 ),
               ),
             ],
@@ -276,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
+}
 // 2023.03.09
 // showDialog 방식에서 화면 전환을 통해
 // 추가 페이지로 이동하는 방식으로 전환.
@@ -492,292 +827,292 @@ class _HomeScreenState extends State<HomeScreen> {
 */
 
 // medicineList
-  ListView makeMedicineList() {
-    return ListView.separated(
-      scrollDirection: Axis.vertical,
-      padding: const EdgeInsets.symmetric(
-        vertical: 10,
-        horizontal: 20,
-      ),
-      itemCount: medicineList.length,
-      // medicineList를 순회하면서 MedicineWidget을 추가한다.
-      itemBuilder: (context, index) {
-        return Card(
-          shadowColor: Colors.blueGrey,
-          elevation: 3,
-          color: Colors.blue,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 5,
-              horizontal: 0,
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.medication_outlined,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: AutoSizeText(
-                          medicineList[index].medicineName!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color.fromARGB(255, 49, 49, 49),
-                          ),
-                          maxLines: 2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // subtitle: Text(
-                  //   medicineList[index].description,
-                  // ),
-                  trailing: SizedBox(
-                    width: 70,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: IconButton(
-                            // 2023.03.10
-                            // MedicineCreationScreen으로 넘어갈 때 데이터를 넘겨서
-                            // Edit인지 Create인지 구분할 수 있어야 하고,
-                            // 추가로 데이터를 전달해주어야 함.
-                            onPressed: () async {
-                              AlarmInformation? result = await Navigator.push(
-                                context,
-                                // Edit Page로 이동.
-                                MaterialPageRoute(
-                                  builder: (context) => MedAlarmSettingScreen(
-                                    sectionDivider: 1,
-                                    alarmInformation: AlarmInformation(
-                                      medicineName:
-                                          medicineList[index].medicineName!,
-                                      isTakeOn: medicineList[index].isTakeOn!,
-                                      pickedTimes:
-                                          medicineList[index].pickedTimes!,
-                                    ),
-                                  ),
-                                ),
-                              );
+//   ListView makeMedicineList() {
+//     return ListView.separated(
+//       scrollDirection: Axis.vertical,
+//       padding: const EdgeInsets.symmetric(
+//         vertical: 10,
+//         horizontal: 20,
+//       ),
+//       itemCount: medicineList.length,
+//       // medicineList를 순회하면서 MedicineWidget을 추가한다.
+//       itemBuilder: (context, index) {
+//         return Card(
+//           shadowColor: Colors.blueGrey,
+//           elevation: 3,
+//           color: Colors.blue,
+//           child: Padding(
+//             padding: const EdgeInsets.symmetric(
+//               vertical: 5,
+//               horizontal: 0,
+//             ),
+//             child: Column(
+//               children: [
+//                 ListTile(
+//                   leading: const Icon(
+//                     Icons.medication_outlined,
+//                     size: 50,
+//                     color: Colors.white,
+//                   ),
+//                   title: Row(
+//                     mainAxisAlignment: MainAxisAlignment.center,
+//                     children: [
+//                       Expanded(
+//                         child: AutoSizeText(
+//                           medicineList[index].medicineName!,
+//                           textAlign: TextAlign.center,
+//                           style: const TextStyle(
+//                             fontSize: 20,
+//                             fontWeight: FontWeight.w500,
+//                             color: Color.fromARGB(255, 49, 49, 49),
+//                           ),
+//                           maxLines: 2,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                   // subtitle: Text(
+//                   //   medicineList[index].description,
+//                   // ),
+//                   trailing: SizedBox(
+//                     width: 70,
+//                     child: Row(
+//                       children: [
+//                         Expanded(
+//                           child: IconButton(
+//                             // 2023.03.10
+//                             // MedicineCreationScreen으로 넘어갈 때 데이터를 넘겨서
+//                             // Edit인지 Create인지 구분할 수 있어야 하고,
+//                             // 추가로 데이터를 전달해주어야 함.
+//                             onPressed: () async {
+//                               AlarmInformation? result = await Navigator.push(
+//                                 context,
+//                                 // Edit Page로 이동.
+//                                 MaterialPageRoute(
+//                                   builder: (context) => MedAlarmSettingScreen(
+//                                     sectionDivider: 1,
+//                                     alarmInformation: AlarmInformation(
+//                                       medicineName:
+//                                           medicineList[index].medicineName!,
+//                                       isTakeOn: medicineList[index].isTakeOn!,
+//                                       pickedTimes:
+//                                           medicineList[index].pickedTimes!,
+//                                     ),
+//                                   ),
+//                                 ),
+//                               );
 
-                              // --------------------------------------------------
-                              // Edit 페이지에서 수정된 데이터가 전달되었으므로,
-                              // 알람 카드의 내용을 수정한다.
-                              // build의 callback에서 카드 변경을 체크하고
-                              // 토스트 메시지를 띄우기 위해 set isCardChanged flag.
-                              // --------------------------------------------------
+//                               // --------------------------------------------------
+//                               // Edit 페이지에서 수정된 데이터가 전달되었으므로,
+//                               // 알람 카드의 내용을 수정한다.
+//                               // build의 callback에서 카드 변경을 체크하고
+//                               // 토스트 메시지를 띄우기 위해 set isCardChanged flag.
+//                               // --------------------------------------------------
 
-                              if (result == null) {
-                                return;
-                              }
+//                               if (result == null) {
+//                                 return;
+//                               }
 
-                              // EditPage에서 내용이 수정되었다면
-                              // isCardChanged = true;
-                              // update!
+//                               // EditPage에서 내용이 수정되었다면
+//                               // isCardChanged = true;
+//                               // update!
 
-                              // AlarmInformation data = AlarmInformation(
-                              //   medicineName: result.medicineName,
-                              //   isTakeOn: result.isTakeOn,
-                              //   pickedTimes: result.pickedTimes,
-                              // );
+//                               // AlarmInformation data = AlarmInformation(
+//                               //   medicineName: result.medicineName,
+//                               //   isTakeOn: result.isTakeOn,
+//                               //   pickedTimes: result.pickedTimes,
+//                               // );
 
-                              await UserDatabaseHelper.updateAlarmInformation(
-                                  result);
+//                               await UserDatabaseHelper.updateAlarmInformation(
+//                                   result, 'prevName');
 
-                              isCardChanged = true;
-                              setState(() {
-                                medicineList[index].medicineName =
-                                    result.medicineName;
-                                medicineList[index].isTakeOn = result.isTakeOn;
-                                medicineList[index].pickedTimes =
-                                    result.pickedTimes;
-                              });
-                            },
-                            icon: const Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: IconButton(
-                            onPressed: () {
-                              // 2023.03.11
-                              // setState 내에서는 async 실행이 불가능하므로
-                              // 외부에서 delete 진행.
-                              UserDatabaseHelper.deleteAlarmInformation(
-                                  medicineList[index].medicineName!);
+//                               isCardChanged = true;
+//                               setState(() {
+//                                 medicineList[index].medicineName =
+//                                     result.medicineName;
+//                                 medicineList[index].isTakeOn = result.isTakeOn;
+//                                 medicineList[index].pickedTimes =
+//                                     result.pickedTimes;
+//                               });
+//                             },
+//                             icon: const Icon(
+//                               Icons.edit,
+//                               color: Colors.white,
+//                             ),
+//                           ),
+//                         ),
+//                         Expanded(
+//                           child: IconButton(
+//                             onPressed: () {
+//                               // 2023.03.11
+//                               // setState 내에서는 async 실행이 불가능하므로
+//                               // 외부에서 delete 진행.
+//                               UserDatabaseHelper.deleteAlarmInformation(
+//                                   medicineList[index].medicineName!);
 
-                              removedMedicineName =
-                                  medicineList[index].medicineName;
-                              medicineList.removeAt(index);
-                              setState(() {});
-                            },
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 10,
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const Text(
-                                '아침',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              medicineList[index].isTakeOn![0]
-                                  ? const Icon(
-                                      Icons.check_box_outlined,
-                                      color: Colors.white,
-                                    )
-                                  : const Icon(
-                                      Icons.check_box_outline_blank_outlined,
-                                      color: Colors.white,
-                                    ),
-                            ],
-                          ),
-                          medicineList[index].isTakeOn![0]
-                              ? Text(
-                                  medicineList[index].pickedTimes![0],
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'OFF',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 10,
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const Text(
-                                '점심',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              medicineList[index].isTakeOn![1]
-                                  ? const Icon(
-                                      Icons.check_box_outlined,
-                                      color: Colors.white,
-                                    )
-                                  : const Icon(
-                                      Icons.check_box_outline_blank_outlined,
-                                      color: Colors.white,
-                                    ),
-                            ],
-                          ),
-                          medicineList[index].isTakeOn![1]
-                              ? Text(
-                                  medicineList[index].pickedTimes![1],
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'OFF',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 10,
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const Text(
-                                '저녁',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              medicineList[index].isTakeOn![2]
-                                  ? const Icon(
-                                      Icons.check_box_outlined,
-                                      color: Colors.white,
-                                    )
-                                  : const Icon(
-                                      Icons.check_box_outline_blank_outlined,
-                                      color: Colors.white,
-                                    ),
-                            ],
-                          ),
-                          medicineList[index].isTakeOn![2]
-                              ? Text(
-                                  medicineList[index].pickedTimes![2],
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'OFF',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-      separatorBuilder: (context, index) => const SizedBox(
-        height: 10,
-      ),
-    );
-  }
-}
+//                               removedMedicineName =
+//                                   medicineList[index].medicineName;
+//                               medicineList.removeAt(index);
+//                               setState(() {});
+//                             },
+//                             icon: const Icon(
+//                               Icons.delete,
+//                               color: Colors.white,
+//                             ),
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                   children: [
+//                     Padding(
+//                       padding: const EdgeInsets.symmetric(
+//                         vertical: 10,
+//                         horizontal: 10,
+//                       ),
+//                       child: Column(
+//                         children: [
+//                           Row(
+//                             children: [
+//                               const Text(
+//                                 '아침',
+//                                 style: TextStyle(
+//                                   color: Colors.white,
+//                                   fontSize: 15,
+//                                 ),
+//                               ),
+//                               medicineList[index].isTakeOn![0]
+//                                   ? const Icon(
+//                                       Icons.check_box_outlined,
+//                                       color: Colors.white,
+//                                     )
+//                                   : const Icon(
+//                                       Icons.check_box_outline_blank_outlined,
+//                                       color: Colors.white,
+//                                     ),
+//                             ],
+//                           ),
+//                           medicineList[index].isTakeOn![0]
+//                               ? Text(
+//                                   medicineList[index].pickedTimes![0],
+//                                   style: const TextStyle(
+//                                     fontSize: 20,
+//                                     color: Colors.white,
+//                                   ),
+//                                 )
+//                               : const Text(
+//                                   'OFF',
+//                                   style: TextStyle(
+//                                     fontSize: 20,
+//                                     color: Colors.white,
+//                                   ),
+//                                 ),
+//                         ],
+//                       ),
+//                     ),
+//                     Padding(
+//                       padding: const EdgeInsets.symmetric(
+//                         vertical: 10,
+//                         horizontal: 10,
+//                       ),
+//                       child: Column(
+//                         children: [
+//                           Row(
+//                             children: [
+//                               const Text(
+//                                 '점심',
+//                                 style: TextStyle(
+//                                   color: Colors.white,
+//                                   fontSize: 15,
+//                                 ),
+//                               ),
+//                               medicineList[index].isTakeOn![1]
+//                                   ? const Icon(
+//                                       Icons.check_box_outlined,
+//                                       color: Colors.white,
+//                                     )
+//                                   : const Icon(
+//                                       Icons.check_box_outline_blank_outlined,
+//                                       color: Colors.white,
+//                                     ),
+//                             ],
+//                           ),
+//                           medicineList[index].isTakeOn![1]
+//                               ? Text(
+//                                   medicineList[index].pickedTimes![1],
+//                                   style: const TextStyle(
+//                                     fontSize: 20,
+//                                     color: Colors.white,
+//                                   ),
+//                                 )
+//                               : const Text(
+//                                   'OFF',
+//                                   style: TextStyle(
+//                                     fontSize: 20,
+//                                     color: Colors.white,
+//                                   ),
+//                                 ),
+//                         ],
+//                       ),
+//                     ),
+//                     Padding(
+//                       padding: const EdgeInsets.symmetric(
+//                         vertical: 10,
+//                         horizontal: 10,
+//                       ),
+//                       child: Column(
+//                         children: [
+//                           Row(
+//                             children: [
+//                               const Text(
+//                                 '저녁',
+//                                 style: TextStyle(
+//                                   color: Colors.white,
+//                                   fontSize: 15,
+//                                 ),
+//                               ),
+//                               medicineList[index].isTakeOn![2]
+//                                   ? const Icon(
+//                                       Icons.check_box_outlined,
+//                                       color: Colors.white,
+//                                     )
+//                                   : const Icon(
+//                                       Icons.check_box_outline_blank_outlined,
+//                                       color: Colors.white,
+//                                     ),
+//                             ],
+//                           ),
+//                           medicineList[index].isTakeOn![2]
+//                               ? Text(
+//                                   medicineList[index].pickedTimes![2],
+//                                   style: const TextStyle(
+//                                     fontSize: 20,
+//                                     color: Colors.white,
+//                                   ),
+//                                 )
+//                               : const Text(
+//                                   'OFF',
+//                                   style: TextStyle(
+//                                     fontSize: 20,
+//                                     color: Colors.white,
+//                                   ),
+//                                 ),
+//                         ],
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ],
+//             ),
+//           ),
+//         );
+//       },
+//       separatorBuilder: (context, index) => const SizedBox(
+//         height: 10,
+//       ),
+//     );
+//   }
+

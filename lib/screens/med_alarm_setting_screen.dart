@@ -26,6 +26,7 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
   // 2 : takeOnNight
   List<bool> isTakeOn = [false, false, false];
   String medicineName = '';
+  String nameBeforeEdit = '';
 
   // ---------------------------------------
   // 2023.03.09
@@ -71,6 +72,9 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
     // In this case, alarmInformation is not null.
     if (widget.sectionDivider == 1) {
       medicineName = widget.alarmInformation!.medicineName!;
+
+      // DB 상에 수정을 가하기 위해서 이전의 이름 기억.
+      nameBeforeEdit = medicineName;
 
       for (var i = 0; i <= 2; i++) {
         if (widget.alarmInformation!.isTakeOn![i] == true) {
@@ -309,7 +313,6 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                         // 기존에는 setState를 사용했는데,
                         // 데이터를 바꾸는 것은 완료 버튼을 눌렀을 때만 시도하면 되기 때문에
                         // setState를 제거한다.
-
                         medicineName = nameInput;
                       },
                       decoration: const InputDecoration(
@@ -406,7 +409,23 @@ class _MedAlarmSettingScreenState extends State<MedAlarmSettingScreen> {
                               pickedTimes: pickedTimes,
                             );
 
-                            Navigator.of(context).pop(result);
+                            // creation
+                            if (widget.sectionDivider == 0) {
+                              Navigator.of(context).pop(
+                                result,
+                              );
+                            }
+                            // edit
+                            else if (widget.sectionDivider == 1) {
+                              Navigator.of(context).pop(
+                                {
+                                  'nameBeforeEdit': nameBeforeEdit,
+                                  'edittedAlarm': result,
+                                },
+                              );
+                            } else {
+                              // error
+                            }
                           },
                           child: const Text('확인'),
                         ),

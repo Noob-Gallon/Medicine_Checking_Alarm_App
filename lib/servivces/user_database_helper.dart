@@ -29,13 +29,14 @@ class UserDatabaseHelper {
   }
 
   static Future<void> updateAlarmInformation(
-      AlarmInformation alarmInformation) async {
+      AlarmInformation alarmInformation, String prevName) async {
     var database = await DatabaseHelper.instance.database;
+    print('prevName');
     await database!.update(
       tableName,
       alarmInformation.toMap(),
       where: 'medicineName = ?',
-      whereArgs: [alarmInformation.medicineName],
+      whereArgs: [prevName],
     );
   }
 
